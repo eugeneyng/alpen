@@ -8,5 +8,3 @@ RUN git clone ${REPO_URL} /tmp/alpen && \
     cp /tmp/alpen/index.html /data/index.html
 
 EXPOSE 5000
-
-CMD ["dufs", "/data", "--allow-all", "--enable-cors", "--render-try-index"]

@@ -1,6 +1,12 @@
 services:
   alpen:
     build: .
+    command: >
+      dufs /data
+      --allow-all
+      --enable-cors
+      --render-try-index
+      --auth admin:admin@/:rw
     container_name: alpen
     image: alpen
     networks:
