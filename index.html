@@ -219,7 +219,7 @@
         },
         async pullFromWebDAV() {
           try {
-            const payload = await this.api.get("notes.json").json();
+            const payload = await this.api.get("storage/notes.json").json();
             const remoteLastModified = payload.meta?.lastModified || 0;
             const localLastModified = this.lastModified;
             console.log("remotelastModified", remoteLastModified);
@@ -246,7 +246,7 @@
               },
               notes: this.notes
             };
-            await this.api.put("notes.json", {
+            await this.api.put("storage/notes.json", {
               json: payload
             });
             localStorage.setItem("lastModified", payload.meta.lastModified);

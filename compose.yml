@@ -2,13 +2,14 @@ services:
   alpen:
     build: .
     container_name: alpen
+    image: alpen
     networks:
       - default
     restart: unless-stopped
     ports:
       - "5000:5000"
     volumes:
-      - ./data:/data
+      - ./data:/data/storage
 
 networks:
   default:

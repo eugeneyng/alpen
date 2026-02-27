@@ -1,12 +1,12 @@
-FROM sigoden/dufs:latest
+FROM alpine:latest
 
+RUN apk add --no-cache dufs git
 ARG REPO_URL=https://github.com/eugeneyng/alpen.git
 
-RUN apk add --no-cache git && \
-    git clone ${REPO_URL} /tmp/repo && \
-    cp /tmp/repo/index.html /data/index.html && \
-    rm -rf /tmp/repo
+RUN git clone ${REPO_URL} /tmp/alpen && \
+    mkdir -p /data && \
+    cp /tmp/alpen/index.html /data/index.html
 
 EXPOSE 5000
 
-CMD ["dufs", "/data", "--allow-all", "--render-index"]
+CMD ["dufs", "/data", "--allow-all", "--enable-cors", "--render-try-index"]
