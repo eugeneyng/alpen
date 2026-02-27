@@ -1,0 +1,348 @@
+<html x-data="alpen" x-bind:data-theme="darkMode ? 'dark' : 'light'" x-bind:color-scheme="darkMode ? 'dark' : 'light'">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <script type="module">
+    import ky from "https://esm.sh/ky";
+    window.ky = ky;
+  </script>
+  <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/sort@latest/dist/cdn.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@latest/dist/cdn.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont/dist/tabler-icons.min.css">
+
+  <style>
+    html {
+      font-size: 90%;
+    }
+
+    .ti {
+      font-size: 1.75rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="container-fluid">
+    <ul>
+      <list><strong>alpen</strong></li>
+    </ul>
+    <ul>
+      <li x-on:click="editingSettings=true"> <i class="ti ti-settings"></i></li>
+      <li x-on:click="toggleDarkMode()"> <i class="ti" :class="darkMode ? 'ti-moon' : 'ti-sun'"></i></li>
+    </ul>
+  </nav>
+  <main>
+    <div class="container">
+      <input type="search" name="search" placeholder="Search" />
+      <form x-on:focusout="toggleNewNote()" x-on:focusin="toggleNewNote()" x-on:submit.prevent="saveNotes()">
+        <fieldset x-bind:disabled="loading">
+          <input name="new-title" placeholder="Title" x-show="newNote" x-transition.duration.500ms />
+          <textarea name="new-note" placeholder="Take a note..." x-on:input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, window.innerHeight * 0.4) + 'px';"></textarea>
+          <button x-show="newNote" x-transition.duration.500ms>Submit</button>
+        </fieldset>
+      </form>
+    </div>
+    <!-- TODO
+    This is a planned section for pinned notes
+    <div class="container-fluid">
+    </div>
+    -->
+    <div class="container-fluid">
+      <div class="grid">
+        <template x-for="(note, index) in notes" :key="index">
+          <article class="grid-item" style="width: 256px; margin-bottom: 16px; max-height: 512px; overflow-y: auto;" x-init="loadMasonry()" x-data="{ showActions: false }" x-on:mouseenter="showActions = true; $nextTick(() => { loadMasonry() })" x-on:mouseleave="showActions = false; $nextTick(() => { loadMasonry() })">
+            <h4 x-text="note.title"></h4>
+            <p x-text="note.content"></p>
+            <p x-show="showActions" x-transition.duration.500ms>
+              <span x-on:click="editNote(index)"><i class="ti ti-pencil"></i></span>
+              <span x-on:click="pinNote(index)"><i class="ti ti-pin"></i></span>
+              <span x-on:click="deleteNote(index)"><i class="ti ti-trash"></i></span>
+            </p>
+          </article>
+        </template>
+      </div>
+    </div>
+    <!-- TODO: Clicking outside editor should close it -->
+    <dialog x-bind:open="editingNote">
+      <article>
+        <header>
+          <button rel="prev" x-on:click="closeEditor()"></button>
+          <p>
+            <strong>Editor</strong>
+          </p>
+        </header>
+        <form x-on:submit.prevent="saveNotes()">
+          <fieldset>
+            <input name="edit-title" x-model="editBuffer.title" />
+            <textarea name="edit-note" x-model="editBuffer.content" x-on:input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, window.innerHeight * 0.4) + 'px';"></textarea>
+          </fieldset>
+          <footer>
+            <button class="secondary" type="button" x-on:click="closeEditor()">Cancel</button>
+            <button type="button submit">Save</button>
+          </footer>
+        </form>
+      </article>
+    </dialog>
+
+    <dialog x-bind:open="editingSettings">
+      <article>
+        <header>
+          <button rel="prev" x-on:click="editingSettings=false"></button>
+          <p>
+            <strong>Settings</strong>
+          </p>
+        </header>
+        <fieldset>
+          <label>Sync URL
+            <input name="edit-server-url" x-model="serverUrl" />
+          </label>
+          <label>
+            <input name="sync" type="checkbox" role="switch" x-model="syncEnabled" />
+            Sync
+          </label>
+        </fieldset>
+        <footer>
+          <button class="secondary" type="button" x-on:click="loadSettings(); editingSettings=false">Cancel</button>
+          <button type="button submit" x-on:click="saveSettings();">Save</button>
+        </footer>
+      </article>
+    </dialog>
+  </main>
+
+  <script>
+    console.clear();
+    document.addEventListener("alpine:init", () => {
+      // console.log("Alpine: initialized.");
+      Alpine.data("alpen", () => ({
+        darkMode: false,
+        editBuffer: {
+          title: "",
+          content: ""
+        },
+        editingNote: false,
+        editingSettings: false,
+        lastSync: null,
+        loading: true,
+        masonry: null,
+        newNote: false,
+        notes: [],
+        serverUrl: "https://localhost:5000", // default for dufs
+        sort: null,
+        syncEnabled: false,
+        init() {
+          // TODO: think about using localForage so writes are asynchronous
+          // TODO: for larger notes and notes with file attachments - switch to RxDB with a backend API?
+          this.loading = true;
+          this.lastModified = parseInt(localStorage.getItem("lastModified")) || 0;
+          this.notes = JSON.parse(localStorage.getItem("notes")) || [];
+          this.loadSettings();
+          this.api = ky.create({
+            prefixUrl: this.serverUrl,
+            timeout: 8000,
+            retry: 1,
+            headers: {
+              "Content-Type": "application/json"
+            },
+          });
+          if (this.syncEnabled) {
+            this.sync();
+          }
+          this.$nextTick(() => {
+            this.loadMasonry();
+          });
+          this.loading = false;
+        },
+        changeHelper() {
+          console.log("Updating lastModified: ", Date.now());
+          this.lastModified = Date.now();
+          localStorage.setItem("lastModified", this.lastModified);
+        },
+        closeEditor(index) {
+          this.editBuffer = {
+            title: "",
+            content: ""
+          };
+          this.editingIndex = null;
+          this.editingNote = false;
+        },
+        deleteNote(index) {
+          this.notes.splice(index, 1);
+          localStorage.setItem('notes', JSON.stringify(this.notes));
+          this.changeHelper();
+          console.log("Deleted note from localStorage.")
+          this.$nextTick(() => {
+            this.loadMasonry();
+          });
+        },
+        editNote(index) {
+          this.editBuffer = {
+            ...this.notes[index]
+          };
+          this.changeHelper();
+          this.editingIndex = index;
+          this.editingNote = true;
+        },
+        loadMasonry() {
+          const grid = document.querySelector("div[class='grid']");
+          const items = grid ? grid.querySelectorAll('.grid-item') : [];
+          if (grid && items.length > 0) {
+            if (!this.masonry) {
+              console.log("Initializing Masonry.")
+              this.masonry = new Masonry(grid, {
+                itemSelector: '.grid-item',
+                columnWidth: 256,
+                gutter: 16,
+              });
+            } else {
+              this.masonry.reloadItems();
+              this.masonry.layout();
+              // console.log("Reloaded Masonry.")
+            }
+          }
+        },
+        loadSettings() {
+          const settings = JSON.parse(localStorage.getItem("settings"));
+          if (settings) {
+            this.darkMode = settings.darkMode ?? window.matchMedia("(prefers-color-scheme: dark)").matches;
+            this.syncEnabled = settings.syncEnabled ?? false;
+            this.serverUrl = settings.serverUrl ?? "http://localhost:5000";
+          }
+        },
+        pinNote(index) {
+          // TODO: Pin notes to the top of the page
+          console.log("pin");
+        },
+        async pullFromWebDAV() {
+          try {
+            const payload = await this.api.get("notes.json").json();
+            const remoteLastModified = payload.meta?.lastModified || 0;
+            const localLastModified = this.lastModified;
+            console.log("remotelastModified", remoteLastModified);
+            console.log("localLastModified", localLastModified);
+            if (remoteLastModified > localLastModified) {
+              this.notes = payload.notes || [];
+              localStorage.setItem("notes", JSON.stringify(this.notes));
+              localStorage.setItem("lastSync", JSON.stringify(remoteLastModified));
+              localStorage.setItem("lastModified", JSON.stringify(remoteLastModified));
+              console.log("Pulled from server.");
+              return true;
+            }
+            return false;
+          } catch (error) {
+            console.warn("Pull failed: ", error);
+            return false;
+          }
+        },
+        async pushToWebDAV() {
+          try {
+            const payload = {
+              meta: {
+                lastModified: Date.now()
+              },
+              notes: this.notes
+            };
+            await this.api.put("notes.json", {
+              json: payload
+            });
+            localStorage.setItem("lastModified", payload.meta.lastModified);
+            localStorage.setItem("lastSync", payload.meta.lastModified);
+            console.log("Pushed to server.");
+          } catch (error) {
+            console.warn("Push failed: ", error);
+          }
+        },
+        saveNotes() {
+          console.log("Saving...");
+          if (this.editingNote) {
+            this.notes[this.editingIndex] = {
+              ...this.notes[this.editingIndex],
+              title: this.editBuffer.title,
+              content: this.editBuffer.content,
+              lastModified: Date.now(),
+            };
+            console.log("Edited note.");
+            this.closeEditor();
+          } else {
+            const id = crypto.randomUUID();
+            const title = document.querySelector("input[name='new-title']");
+            const textarea = document.querySelector("textarea[name='new-note']");
+            const noteTitle = title.value ? title.value : textarea.value.slice(0, 16);
+            const noteData = {
+              content: textarea.value,
+              id: id,
+              lastModified: Date.now(),
+              pinned: false,
+              title: noteTitle
+            };
+            this.notes.push(noteData);
+            console.log("New note created.")
+            title.value = "";
+            textarea.value = "";
+          }
+          localStorage.setItem('notes', JSON.stringify(this.notes));
+          console.log("Saved note to localStorage.")
+          this.changeHelper();
+          if (this.syncEnabled) {
+            this.sync();
+          }
+          this.$nextTick(() => {
+            this.loadMasonry();
+          });
+        },
+        saveSettings() {
+          const settings = {
+            darkMode: this.darkMode,
+            serverUrl: this.serverUrl || "http://localhost:5000",
+            sort: this.sort,
+            syncEnabled: this.syncEnabled,
+          };
+          localStorage.setItem("settings", JSON.stringify(settings));
+          console.log("Settings saved to localStorage.");
+          this.api = ky.create({
+            prefixUrl: this.serverUrl,
+            timeout: 8000,
+            retry: 1,
+            headers: {
+              "Content-Type": "application/json"
+            }
+          });
+          this.changeHelper();
+          if (this.syncEnabled) {
+            this.sync();
+          }
+          this.editingSettings = false;
+        },
+        async sync() {
+          console.log("Syncing...");
+          const pullResult = await this.pullFromWebDAV();
+          if (!pullResult) {
+            await this.pushToWebDAV();
+          }
+        },
+        // TODO: Test remote sync function
+        //
+        toggleDarkMode() {
+          this.darkMode = !this.darkMode;
+          console.log("darkMode: ", this.darkMode)
+          this.saveSettings();
+        },
+        toggleNewNote() {
+          const title = document.querySelector("input[name='new-title']");
+          const textarea = document.querySelector("textarea[name='new-note']");
+          const hasContent = (title && title.value !== "") || (textarea && textarea.value !== "");
+          if (!hasContent) {
+            this.newNote = !this.newNote
+          }
+        },
+      }));
+      // console.log("Alpine: registered x-data:alpen.");
+    });
+  </script>
+</body>
+
+</html>
