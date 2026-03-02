@@ -93,7 +93,7 @@ See `LICENSE` for more information.
 [issues-shield]: https://img.shields.io/github/issues/eugeneyng/alpen.svg
 [issues-url]: https://github.com/eugeneyng/alpen/issues
 [license-shield]: https://img.shields.io/github/license/eugeneyng/alpen.svg
-[license-url]: https://github.com/eugeneyng/alpen/blob/master/LICENSE.txt
+[license-url]: https://github.com/eugeneyng/alpen/blob/master/LICENSE
 <!-- Shields.io badges. You can a comprehensive list with many more badges at: https://github.com/inttter/md-badges -->
 [Alpine.js]: https://img.shields.io/badge/Alpine.js-8BC0D0?logo=alpinedotjs&logoColor=fff
 [Alpine-url]: https://alpinejs.dev/
