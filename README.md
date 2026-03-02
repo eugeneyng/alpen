@@ -71,7 +71,7 @@ You can support the development of Homa [on Ko-Fi](https://ko-fi.com/eugeneng). 
 ## Acknowledgements
 
 * [![Alpine][Alpine.js]][Alpine-url]
-* [![Alpine][Alpine.js]][Alpine-url]
+* [![Docker][Alpine.js]][Alpine-url]
 
 ## Contact
 
@@ -92,3 +92,5 @@ You can support the development of Homa [on Ko-Fi](https://ko-fi.com/eugeneng). 
 <!-- Shields.io badges. You can a comprehensive list with many more badges at: https://github.com/inttter/md-badges -->
 [Alpine.js]: https://img.shields.io/badge/Alpine.js-8BC0D0?logo=alpinedotjs&logoColor=fff
 [Alpine-url]: https://alpinejs.dev/
+[Docker]: https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff
+[Docker-url]: https://docker.com/
