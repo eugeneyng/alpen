@@ -73,6 +73,11 @@ You can support the development of Homa [on Ko-Fi](https://ko-fi.com/eugeneng). 
 * [![Alpine][Alpine.js]][Alpine-url]
 * [![Docker][Docker]][Docker-url]
 
+## License
+
+[GNU AGPLv3](https://choosealicense.com/licenses/agpl-3.0/)
+See `LICENSE` for more information.
+
 ## Contact
 
 - [Eugene](https://github.com/eugeneyng)
