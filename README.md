@@ -71,7 +71,7 @@ You can support the development of Homa [on Ko-Fi](https://ko-fi.com/eugeneng). 
 ## Acknowledgements
 
 * [![Alpine][Alpine.js]][Alpine-url]
-* [![Docker][Alpine.js]][Alpine-url]
+* [![Docker][Docker]][Docker-url]
 
 ## Contact
 
