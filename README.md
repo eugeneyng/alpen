@@ -45,6 +45,7 @@ Alpen (Alpine + Pen) is intended to be a super-simple, single-HTML-file replacem
 3. cd into the directory you want to use and run `git clone https://github.com/eugeneyng/alpen`
 4. cd into the alpen directory you just created
 5. Run `docker compose up -d`
+6. Congratulations! You can now access alpen on http://localhost:5000. You can also put this behind a reverse proxy like Caddy, Nginx, or Traefik.
 
 ## Usage
 
