@@ -40,7 +40,11 @@ Alpen (Alpine + Pen) is intended to be a super-simple, single-HTML-file replacem
 
 ## Installation
 
-
+1. Install [Docker][Docker-url] and Docker Compose.
+2. Install [Git][Git-url]
+3. cd into the directory you want to use and run `git clone https://github.com/eugeneyng/alpen`
+4. cd into the alpen directory you just created
+5. Run `docker compose up -d`
 
 ## Usage
 
@@ -99,3 +103,4 @@ See `LICENSE` for more information.
 [Alpine-url]: https://alpinejs.dev/
 [Docker]: https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff
 [Docker-url]: https://docker.com/
+[Git-url]: https://git-scm.com/
