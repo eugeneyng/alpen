@@ -235,7 +235,7 @@
             return false;
           } catch (error) {
             console.warn("Pull failed: ", error);
-            return false;
+            return null;
           }
         },
         async pushToWebDAV() {
@@ -320,7 +320,7 @@
         async sync() {
           console.log("Syncing...");
           const pullResult = await this.pullFromWebDAV();
-          if (!pullResult) {
+          if (pullResult === null) {
             await this.pushToWebDAV();
           }
         },
